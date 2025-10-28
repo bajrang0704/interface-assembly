@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telangana Assembly RAG System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 90vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+        
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            background: #007bff;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 20px 20px 5px 20px;
+            margin-left: 20%;
+            box-shadow: 0 2px 10px rgba(0,123,255,0.3);
+        }
+        
+        .bot-message {
+            background: white;
+            color: #333;
+            padding: 20px;
+            border-radius: 20px 20px 20px 5px;
+            margin-right: 20%;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .bot-message h4 {
+            color: #007bff;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .bot-message .answer {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .bot-message .meta {
+            font-size: 0.9em;
+            color: #666;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .input-group input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+        
+        .input-group input:focus {
+            border-color: #007bff;
+        }
+        
+        .input-group button {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            min-width: 110px;
+        }
+        
+        .input-group button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.4);
+        }
+        
+        .input-group button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .examples {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .examples h4 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .example-queries {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .example-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #007bff;
+            color: #007bff;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .example-btn:hover {
+            background: #007bff;
+            color: white;
+        }
+        
+        .status {
+            padding: 10px 20px;
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+            margin: 10px 20px;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left-color: #dc3545;
+        }
+        
+        .context-message {
+            border-left: 4px solid #17a2b8;
+            background: #f8f9fa;
+        }
+        
+        .context-preview {
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .context-item {
+            background: white;
+            padding: 15px;
+            margin: 12px 0;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        
+        .context-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .context-item strong {
+            color: #007bff;
+            font-size: 1.2em;
+            flex: 1;
+        }
+        
+        .relevance-score {
+            background: #28a745;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        
+        .context-item small {
+            color: #6c757d;
+            font-size: 0.9em;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .context-text-full {
+            margin-top: 12px;
+            color: #495057;
+            line-height: 1.6;
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Responsive: mobile-first improvements */
+        @media (max-width: 640px) {
+            body {
+                padding: 10px;
+                padding-bottom: 90px; /* space for fixed input bar */
+            }
+            .container {
+                border-radius: 12px;
+            }
+            .header {
+                padding: 18px;
+            }
+            .header h1 {
+                font-size: 1.5em;
+            }
+            .header p {
+                font-size: 0.95em;
+            }
+            .chat-container {
+                height: 65vh;
+            }
+            .messages {
+                padding: 14px;
+            }
+            .user-message,
+            .bot-message {
+                margin-left: 0;
+                margin-right: 0;
+                border-radius: 14px;
+            }
+            .bot-message .answer {
+                font-size: 1em;
+            }
+            .input-container {
+                position: fixed;
+                left: 10px;
+                right: 10px;
+                bottom: 12px;
+                z-index: 100;
+                padding: 10px 12px;
+                border: 1px solid #e9ecef;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+                border-radius: 14px;
+            }
+            .input-group {
+                flex-direction: column;
+                gap: 8px;
+                align-items: stretch;
+            }
+            .input-group input {
+                font-size: 15px;
+                padding: 14px 16px;
+            }
+            .input-group button {
+                width: 100%;
+                padding: 14px;
+                border-radius: 12px;
+            }
+            .examples {
+                padding: 14px;
+            }
+            .example-queries {
+                gap: 8px;
+            }
+            .example-btn {
+                font-size: 13px;
+                padding: 6px 12px;
+            }
+            .context-preview {
+                max-height: 45vh;
+            }
+            .context-item {
+                padding: 12px;
+            }
+            .context-item small {
+                font-size: 0.85em;
+            }
+            .relevance-score {
+                font-size: 0.75em;
+                padding: 3px 10px;
+            }
+        }
+        
+        .context-text-full strong {
+            color: #495057;
+            font-size: 1em;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .processing-note {
+            text-align: center;
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            margin-top: 10px;
+            color: #1976d2;
+            font-style: italic;
+        }
+        
+        .minimized {
+            opacity: 0.7;
+            transform: scale(0.98);
+            transition: all 0.3s ease;
+        }
+        
+        .minimized-text {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏛️ Telangana Assembly RAG System</h1>
+            <p>Ask questions about Telangana Assembly proceedings in English</p>
+        </div>
+        
+        <div class="status" id="status"></div>
+        
+        <div class="chat-container">
+            <div class="messages" id="messages">
+                <div class="message">
+                    <div class="bot-message">
+                        <h4>👋 Welcome!</h4>
+                        <div class="answer">I'm your Telangana Assembly assistant. I can answer questions about assembly proceedings, speeches, and discussions. Please ask in English!</div>
+                        <div class="meta">
+                            <strong>Ready to help!</strong> Try asking about Harish Rao, irrigation projects, or any assembly topic.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div>Searching Telangana Assembly records...</div>
+            </div>
+        </div>
+        
+        <div class="examples">
+            <h4>💡 Try these example queries:</h4>
+            <div class="example-queries">
+                <button class="example-btn" onclick="sendMessage('T. Harish Rao Godavari Kaleshwaram')">T. Harish Rao — Godavari/Kaleshwaram</button>
+                <button class="example-btn" onclick="sendMessage('A. Indrakaran Reddy Endowments Bill')">A. Indrakaran Reddy — Endowments Bill</button>
+                <button class="example-btn" onclick="sendMessage('K. Chandrashekar Rao Mission Bhagiratha')">K. Chandrashekar Rao — Mission Bhagiratha</button>
+                <button class="example-btn" onclick="sendMessage('Etela Rajender teacher recruitment')">Etela Rajender — Teacher recruitment</button>
+                <button class="example-btn" onclick="sendMessage('G. Bala Raju Palamuru Rangareddy project')">G. Bala Raju — Palamuru-RR project</button>
+            </div>
+        </div>
+        
+        <div class="input-container">
+            <div class="input-group">
+                <input type="text" id="messageInput" placeholder="Ask about Telangana Assembly proceedings in English..." onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()" id="sendBtn">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Use public backend via ngrok so this file can be opened anywhere
+        const API_BASE = 'https://flyless-dovie-keto.ngrok-free.dev';
+        const API_URL = `${API_BASE}/ask`;
+        
+        function showStatus(message, isError = false) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = isError ? 'status error' : 'status';
+            status.style.display = 'block';
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 5000);
+        }
+        
+        function addMessage(content, isUser = false) {
+            const messages = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            if (isUser) {
+                messageDiv.innerHTML = `<div class="user-message">${content}</div>`;
+            } else {
+                messageDiv.innerHTML = `
+                    <div class="bot-message">
+                        <h4>🤖 Assembly Assistant</h4>
+                        <div class="answer">${content.answer || 'No answer available'}</div>
+                        <div class="meta">
+                            <strong>Found ${content.hits || 0} relevant records</strong><br>
+                            <details>
+                                <summary><strong>📋 View Full Context (${content.context ? content.context.length : 0} characters)</strong></summary>
+                                <div style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; white-space: pre-wrap; font-family: monospace; font-size: 0.9em; max-height: 300px; overflow-y: auto;">
+                                    ${content.context || 'No context available'}
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            messages.appendChild(messageDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+        
+        function setLoading(show) {
+            const loading = document.getElementById('loading');
+            const sendBtn = document.getElementById('sendBtn');
+            
+            if (show) {
+                loading.classList.add('show');
+                sendBtn.disabled = true;
+                sendBtn.textContent = 'Searching...';
+            } else {
+                loading.classList.remove('show');
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send';
+            }
+        }
+        
+        async function sendMessage(message = null) {
+            const input = document.getElementById('messageInput');
+            const query = message || input.value.trim();
+            
+            if (!query) return;
+            
+            // Add user message
+            addMessage(query, true);
+            input.value = '';
+            
+            setLoading(true);
+            
+            try {
+                // First, get the search results (context) immediately
+                const searchResponse = await fetch(`${API_BASE}/search?query=${encodeURIComponent(query)}&k=5`);
+                if (searchResponse.ok) {
+                    const searchData = await searchResponse.json();
+                    if (searchData.results && searchData.results.length > 0) {
+                        // Show context immediately
+                        showContextResults(searchData.results, query);
+                    }
+                }
+                
+                // Then get the full LLM response
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ q: query })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Keep context visible and show final answer
+                addMessage(data);
+                showStatus('Response received successfully!');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                hideContextResults();
+                addMessage({
+                    answer: `Sorry, I encountered an error: ${error.message}. Please make sure the RAG API is running on port 8000.`,
+                    hits: 0,
+                    context: 'Error occurred while processing your request.'
+                });
+                showStatus('Error: Could not connect to RAG API. Make sure it\'s running!', true);
+            } finally {
+                setLoading(false);
+            }
+        }
+        
+        function showContextResults(results, query) {
+            const messages = document.getElementById('messages');
+            const contextDiv = document.createElement('div');
+            contextDiv.id = 'context-results';
+            contextDiv.className = 'message context-message';
+            contextDiv.innerHTML = `
+                <div class="bot-message">
+                    <h4>🔍 Found ${results.length} relevant documents</h4>
+                    <div class="context-preview">
+                        ${results.map((result, index) => `
+                            <div class="context-item">
+                                <div class="context-header">
+                                    <strong>${index + 1}. ${result.title}</strong>
+                                    <span class="relevance-score">Relevance: ${result.relevance_score || 'N/A'}</span>
+                                </div>
+                                <small>${result.date} | ${result.speaker} | ${result.speech_role}</small><br>
+                                <div class="context-text-full">
+                                    <strong>Full Content:</strong><br>
+                                    ${result.text}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="processing-note">
+                        <em>🤖 Processing with AI to generate answer...</em>
+                    </div>
+                </div>
+            `;
+            messages.appendChild(contextDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+        
+        function hideContextResults() {
+            const contextDiv = document.getElementById('context-results');
+            if (contextDiv) {
+                contextDiv.style.opacity = '0.7';
+                contextDiv.style.transform = 'scale(0.98)';
+                contextDiv.innerHTML = `
+                    <div class="bot-message minimized" onclick="toggleContext()">
+                        <h4>📋 Context Retrieved (${contextDiv.querySelectorAll('.context-item').length} documents)</h4>
+                        <div class="minimized-text">
+                            <strong>Documents found:</strong> ${contextDiv.querySelectorAll('.context-item').length} relevant documents<br>
+                            <strong>Click to expand</strong> and view full context details
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        function toggleContext() {
+            const contextDiv = document.getElementById('context-results');
+            if (contextDiv) {
+                if (contextDiv.style.opacity === '0.7') {
+                    // Expand
+                    contextDiv.style.opacity = '1';
+                    contextDiv.style.transform = 'scale(1)';
+                    contextDiv.querySelector('.minimized').innerHTML = `
+                        <h4>📋 Context Retrieved (${contextDiv.querySelectorAll('.context-item').length} documents)</h4>
+                        <div class="minimized-text">
+                            <strong>Click to minimize</strong> context details
+                        </div>
+                    `;
+                } else {
+                    // Minimize
+                    hideContextResults();
+                }
+            }
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        // Check API connection on load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ q: 'test' })
+                });
+                if (response.ok) {
+                    showStatus('✅ Connected to Telangana Assembly RAG System!');
+                }
+            } catch (error) {
+                showStatus('⚠️ RAG API not running. Please start it first!', true);
+            }
+        });
+    </script>
+</body>
+</html>
